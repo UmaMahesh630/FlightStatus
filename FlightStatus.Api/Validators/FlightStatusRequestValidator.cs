@@ -19,10 +19,12 @@ public class FlightStatusRequestValidator : AbstractValidator<FlightStatusReques
     public FlightStatusRequestValidator()
     {
         RuleFor(x => x.FlightNumber)
+            .Cascade(CascadeMode.Stop)
             .NotEmpty().WithMessage("Flight number is required.")
             .Matches(@"^[a-zA-Z0-9]{3,10}$").WithMessage("Flight number must be alphanumeric and between 3 and 10 characters.");
 
         RuleFor(x => x.DateStr)
+            .Cascade(CascadeMode.Stop)
             .NotEmpty().WithMessage("Date is required.")
             .Matches(@"^\d{4}-\d{2}-\d{2}$").WithMessage("Date must be in 'yyyy-MM-dd' format.")
             .Must(BeAValidDate).WithMessage("Date must be a valid calendar date.");

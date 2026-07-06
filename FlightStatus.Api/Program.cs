@@ -81,10 +81,10 @@ app.MapGet("/flights/status", async (
     [FromServices] IFlightStatusService flightStatusService) =>
 {
     // Parse the date (guaranteed valid due to validation filter checks)
-    var date = DateOnly.ParseExact(request.DateStr, "yyyy-MM-dd");
+    var date = DateOnly.ParseExact(request.DateStr!, "yyyy-MM-dd");
 
     // Execute Orchestration Logic
-    var statusResult = await flightStatusService.ExecuteLookupAsync(request.FlightNumber, date);
+    var statusResult = await flightStatusService.ExecuteLookupAsync(request.FlightNumber!, date);
 
     return Results.Ok(statusResult);
 })

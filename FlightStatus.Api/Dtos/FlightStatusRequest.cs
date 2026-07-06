@@ -19,10 +19,10 @@ public record FlightStatusRequest
     [FromQuery(Name = "flightNumber")]
     [Required(ErrorMessage = "Flight number is required.")]
     [StringLength(10, MinimumLength = 3, ErrorMessage = "Flight number must be between 3 and 10 characters.")]
-    public string FlightNumber { get; init; } = string.Empty;
+    public string? FlightNumber { get; init; }
 
     [FromQuery(Name = "date")]
     [Required(ErrorMessage = "Date is required.")]
     [RegularExpression(@"^\d{4}-\d{2}-\d{2}$", ErrorMessage = "Date must be in yyyy-MM-dd format.")]
-    public string DateStr { get; init; } = string.Empty;
+    public string? DateStr { get; init; }
 }
