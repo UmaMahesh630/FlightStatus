@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
+using FluentValidation;
 using FlightStatus.Api.Domain.Models;
+using FlightStatus.Api.Dtos;
 using FlightStatus.Api.Middleware;
 using FlightStatus.Api.Providers;
 using FlightStatus.Api.Services;
@@ -24,17 +26,20 @@ builder.Services.AddCors(options =>
     });
 });
 
-// 2. Global Exception Handling and Problem Details (.NET 8 standard):
-//    DESIGN RATIONALE: Registers our custom global IExceptionHandler and enabling built-in support for 
-//    ProblemDetails (RFC 7807) to return standardized machine-readable HTTP error structures.
+// 2. Global Exception Handling and Problem Details (.NET 8 standard)
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
-// 3. Providers (Strategy Pattern):
+// 3. Register FluentValidation Validators:
+//    DESIGN DECISION: Registers all validators (like FlightStatusRequestValidator) automatically from 
+//    the assembly, reducing registration maintenance effort as more validators are created.
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+
+// 4. Providers (Strategy Pattern):
 builder.Services.AddScoped<IFlightStatusProvider, AeroTrackFlightStatusProvider>();
 builder.Services.AddScoped<IFlightStatusProvider, QuickFlightFlightStatusProvider>();
 
-// 4. Orchestration Service:
+// 5. Orchestration Service:
 builder.Services.AddScoped<IFlightStatusService, FlightStatusService>();
 
 // =========================================================================
@@ -64,33 +69,26 @@ app.UseCors("AngularDevPolicy");
 /// GET /flights/status
 /// Retrieves normalized flight status information for a given flight number and date.
 /// </summary>
+/// <remarks>
+/// ARCHITECTURE & DESIGN DECISIONS:
+/// - **Parameter Bundling ([AsParameters])**: Captures all incoming query arguments into a cohesive DTO.
+/// - **Cross-Cutting Validation (AOP Filter)**: Appends AddEndpointFilter for validation. The endpoint code 
+///   does not execute manual checks; instead, ValidationFilter interceptors check both Data Annotations 
+///   and FluentValidation rules before execution, conforming to the Single Responsibility Principle.
+/// </remarks>
 app.MapGet("/flights/status", async (
-    [FromQuery(Name = "flightNumber")] string? flightNumber,
-    [FromQuery(Name = "date")] string? dateStr,
+    [AsParameters] FlightStatusRequest request,
     [FromServices] IFlightStatusService flightStatusService) =>
 {
-    // 1. Input Validation (Defense in Depth)
-    if (string.IsNullOrWhiteSpace(flightNumber))
-    {
-        return Results.BadRequest(new { error = "flightNumber query parameter is required." });
-    }
+    // Parse the date (guaranteed valid due to validation filter checks)
+    var date = DateOnly.ParseExact(request.DateStr, "yyyy-MM-dd");
 
-    if (string.IsNullOrWhiteSpace(dateStr))
-    {
-        return Results.BadRequest(new { error = "date query parameter is required." });
-    }
+    // Execute Orchestration Logic
+    var statusResult = await flightStatusService.ExecuteLookupAsync(request.FlightNumber, date);
 
-    if (!DateOnly.TryParseExact(dateStr, "yyyy-MM-dd", out var date))
-    {
-        return Results.BadRequest(new { error = "date parameter must be in 'yyyy-MM-dd' format." });
-    }
-
-    // 2. Execute Orchestration Logic
-    var statusResult = await flightStatusService.ExecuteLookupAsync(flightNumber, date);
-
-    // 3. Return Mapped Unified Result
     return Results.Ok(statusResult);
 })
+.AddEndpointFilter<ValidationFilter<FlightStatusRequest>>()
 .WithName("GetFlightStatus")
 .WithSummary("Query and normalize flight status.")
 .WithDescription("Queries registered flight providers concurrently, normalizes responses, and returns the latest status.")
