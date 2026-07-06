@@ -1,171 +1,191 @@
-# Flight Status Lookup - Technical Specification
+# Flight Status Lookup - Technical Specification & Architecture Design
 
-This document defines the data models, provider schemas, normalization rules, and interface contracts for the SkyRoute Flight Status lookup system.
+This specification defines the system architecture, class relationships, interfaces, and service responsibilities for the Flight Status lookup platform.
 
 ---
 
-## 1. Data Models
+## 1. System Architecture Diagram (Mermaid)
 
-### 1.1. Unified Status Enum
+The following diagram illustrates the relationships and interactions between the components in the system, demonstrating the **Strategy Pattern** for providers and the **Service Layer** pattern for orchestration.
 
-The application normalizes provider-specific statuses into the following unified enumeration:
+```mermaid
+classDiagram
+    class UnifiedStatus {
+        <<enumeration>>
+        OnTime
+        Delayed
+        Cancelled
+        Diverted
+        Unknown
+    }
 
-| Unified Status | Meaning |
-| :--- | :--- |
-| `OnTime` | Departing or arrived within 15 minutes of the scheduled time. |
-| `Delayed` | Departure or arrival pushed beyond 15 minutes of the scheduled time. |
-| `Cancelled` | The flight will not operate. |
-| `Diverted` | The flight landed at a different airport. |
-| `Unknown` | The provider returned no usable status. |
+    class FlightStatusResult {
+        +string FlightNumber
+        +DateOnly Date
+        +UnifiedStatus Status
+        +string StatusText
+        +DateTime ScheduledDeparture
+        +DateTime? ActualDeparture
+        +DateTime ScheduledArrival
+        +DateTime? ActualArrival
+        +string? Terminal
+        +string? Gate
+        +string? DelayReason
+        +string DataSource
+        +DateTime LastUpdatedUtc
+    }
 
-In C#, this is represented as:
+    class IFlightStatusProvider {
+        <<interface>>
+        +string ProviderName
+        +GetStatusAsync(string flightNumber, DateOnly date) Task~FlightStatusResult?~
+    }
+
+    class AeroTrackFlightStatusProvider {
+        +string ProviderName
+        +GetStatusAsync(string flightNumber, DateOnly date) Task~FlightStatusResult?~
+        -MapToUnified(AeroTrackResponse raw) FlightStatusResult
+    }
+
+    class QuickFlightFlightStatusProvider {
+        +string ProviderName
+        +GetStatusAsync(string flightNumber, DateOnly date) Task~FlightStatusResult?~
+        -MapToUnified(QuickFlightResponse raw) FlightStatusResult
+    }
+
+    class IFlightStatusService {
+        <<interface>>
+        +ExecuteLookupAsync(string flightNumber, DateOnly date) Task~FlightStatusResult~
+    }
+
+    class FlightStatusService {
+        -IEnumerable~IFlightStatusProvider~ _providers
+        -ILogger~FlightStatusService~ _logger
+        +ExecuteLookupAsync(string flightNumber, DateOnly date) Task~FlightStatusResult~
+    }
+
+    IFlightStatusProvider <|.. AeroTrackFlightStatusProvider
+    IFlightStatusProvider <|.. QuickFlightFlightStatusProvider
+    IFlightStatusService <|.. FlightStatusService
+    FlightStatusService --> IFlightStatusProvider : depends on (IEnumerable)
+    FlightStatusService ..> FlightStatusResult : returns
+    IFlightStatusProvider ..> FlightStatusResult : returns
+```
+
+---
+
+## 2. Directory & Folder Structure
+
+To ensure separation of concerns, the backend is organized into functional folders:
+
+```text
+FlightStatus.Api/
+├── Domain/
+│   ├── Enums/
+│   │   └── UnifiedStatus.cs             # The unified status enum
+│   └── Models/
+│       └── FlightStatusResult.cs        # Unified domain model returned by service/providers
+├── Dtos/
+│   ├── AeroTrackResponse.cs             # Raw model returned by AeroTrack stub
+│   └── QuickFlightResponse.cs           # Raw model returned by QuickFlight stub
+├── Providers/
+│   ├── IFlightStatusProvider.cs         # Strategy interface for providers
+│   ├── AeroTrackFlightStatusProvider.cs # Concrete implementation for AeroTrack
+│   └── QuickFlightFlightStatusProvider.cs# Concrete implementation for QuickFlight
+├── Services/
+│   ├── IFlightStatusService.cs         # Core orchestration service interface
+│   └── FlightStatusService.cs           # Business logic and coordination implementation
+├── Program.cs                           # Minimal API router & DI container registration
+└── appsettings.json                     # Environment configurations
+```
+
+---
+
+## 3. Core Interface Contracts
+
+### 3.1. `IFlightStatusProvider` (Strategy Pattern)
+Each external provider implements this contract. It isolates provider-specific HTTP calls and mapping logic from the core business services.
 
 ```csharp
-public enum UnifiedStatus
-{
-    OnTime,
-    Delayed,
-    Cancelled,
-    Diverted,
-    Unknown
-}
-```
+namespace FlightStatus.Api.Providers;
 
----
+using FlightStatus.Api.Domain.Models;
 
-### 1.2. Provider Schemas (Stubs)
-
-#### AeroTrack (Verbose Provider)
-AeroTrack returns verbose status information using its own naming conventions.
-
-**Conceptual JSON Schema:**
-```json
-{
-  "flightCode": "string",
-  "operatingDate": "string (yyyy-MM-dd)",
-  "status": "string", // e.g., "ON_TIME", "LATE", "CANCELLED", "DIVERTED"
-  "scheduledDeparture": "string (ISO 8601)",
-  "actualDeparture": "string (ISO 8601) or null",
-  "scheduledArrival": "string (ISO 8601)",
-  "actualArrival": "string (ISO 8601) or null",
-  "departureTerminal": "string",
-  "departureGate": "string",
-  "arrivalTerminal": "string",
-  "arrivalGate": "string",
-  "delayReason": "string or null",
-  "lastUpdated": "string (ISO 8601 UTC)"
-}
-```
-
-#### QuickFlight (Minimal Provider)
-QuickFlight returns minimal flight details. It has faster response times but does not include gate, terminal, or delay reason details.
-
-**Conceptual JSON Schema:**
-```json
-{
-  "flightNum": "string",
-  "date": "string (yyyy-MM-dd)",
-  "statusCode": "string", // e.g., "OK", "DELAY", "CX", "DIV"
-  "scheduledDep": "string (ISO 8601)",
-  "scheduledArr": "string (ISO 8601)",
-  "updatedAtUtc": "string (ISO 8601 UTC)"
-}
-```
-
----
-
-### 1.3. Normalized System Response (`FlightStatusResult`)
-
-This is the unified contract returned by the API backend to the frontend.
-
-```csharp
-public class FlightStatusResult
-{
-    public string FlightNumber { get; set; } = string.Empty;
-    public DateOnly Date { get; set; }
-    public UnifiedStatus Status { get; set; }
-    public string StatusText => Status.ToString();
-    
-    // Scheduled and actual times (in local or UTC, normalized to ISO 8601 strings)
-    public DateTime ScheduledDeparture { get; set; }
-    public DateTime? ActualDeparture { get; set; }
-    public DateTime ScheduledArrival { get; set; }
-    public DateTime? ActualArrival { get; set; }
-
-    // Optional AeroTrack-only fields (null if absent / QuickFlight used)
-    public string? Terminal { get; set; }
-    public string? Gate { get; set; }
-    public string? DelayReason { get; set; }
-
-    // Metadata for auditing/selection verification
-    public string DataSource { get; set; } = string.Empty; // "AeroTrack" or "QuickFlight"
-    public DateTime LastUpdatedUtc { get; set; }
-}
-```
-
----
-
-## 2. Interface Definitions
-
-To support dependency injection and abstract the data sources, the backend uses the following interfaces:
-
-```csharp
 public interface IFlightStatusProvider
 {
     /// <summary>
-    /// The unique identifier/name of the provider (e.g., "AeroTrack", "QuickFlight").
+    /// Friendly name of the data source provider (e.g. "AeroTrack").
     /// </summary>
     string ProviderName { get; }
 
     /// <summary>
-    /// Queries the provider for flight status. Returns null if the flight is not found or provider fails.
+    /// Fetches flight status details from the provider and maps it to the unified domain schema.
+    /// Returns null if the flight is not found, or if the provider returns no usable data.
     /// </summary>
     Task<FlightStatusResult?> GetStatusAsync(string flightNumber, DateOnly date);
 }
 ```
 
----
+### 3.2. `IFlightStatusService` (Orchestration Service Layer)
+The endpoint calls this service to perform the business orchestrations.
 
-## 3. Business Logic & Normalization Rules
+```csharp
+namespace FlightStatus.Api.Services;
 
-### 3.1. Status Value Mapping
+using FlightStatus.Api.Domain.Models;
 
-The normalization layer must map the distinct vocabulary of each provider to the unified enum values:
-
-| Provider | Raw Value | Mapped Unified Status |
-| :--- | :--- | :--- |
-| **AeroTrack** | `"ON_TIME"` | `UnifiedStatus.OnTime` |
-| | `"LATE"` | `UnifiedStatus.Delayed` |
-| | `"CANCELLED"` | `UnifiedStatus.Cancelled` |
-| | `"DIVERTED"` | `UnifiedStatus.Diverted` |
-| | *Any other value or null* | `UnifiedStatus.Unknown` |
-| **QuickFlight**| `"OK"` | `UnifiedStatus.OnTime` |
-| | `"DELAY"` | `UnifiedStatus.Delayed` |
-| | `"CX"` | `UnifiedStatus.Cancelled` |
-| | `"DIV"` | `UnifiedStatus.Diverted` |
-| | *Any other value or null* | `UnifiedStatus.Unknown` |
+public interface IFlightStatusService
+{
+    /// <summary>
+    /// Queries all registered providers in parallel, applies conflict resolution, 
+    /// and handles failures gracefully.
+    /// </summary>
+    /// <exception cref="ArgumentException">Thrown when input validation fails.</exception>
+    Task<FlightStatusResult> ExecuteLookupAsync(string flightNumber, DateOnly date);
+}
+```
 
 ---
 
-### 3.2. Provider Selection Algorithm
+## 4. Component Responsibilities
 
-When a request for `/flights/status?flightNumber={code}&date={yyyy-MM-dd}` is received:
+### 4.1. Minimal API Endpoint Handler (`Program.cs`)
+* **Input Validation**: Ensures query parameters (`flightNumber` and `date`) are provided and valid; returns a `400 Bad Request` immediately if validation fails.
+* **Orchestration**: Calls the `IFlightStatusService` dependency.
+* **Response Generation**: Formats and returns a `200 OK` JSON response containing the unified model, or a `404 Not Found` if the flight status is unknown/unavailable.
 
-1. **Query Phase**: Call both registered implementations of `IFlightStatusProvider` concurrently (or sequentially with a timeout).
-2. **Evaluation Phase**:
-   - **Scenario A (Both respond)**: Compare the `LastUpdatedUtc` timestamps of both results. Select the result with the **later** timestamp.
-   - **Scenario B (Only one responds)**: Select that single successful response.
-   - **Scenario C (Neither responds / both return null / exceptions)**: Return a `404 Not Found` or a result with `UnifiedStatus.Unknown` and a clear error/status message (e.g., "Flight status currently unavailable from all providers").
+### 4.2. Orchestration Service (`FlightStatusService`)
+* **Concurrency**: Fires requests to all registered `IFlightStatusProvider` instances concurrently using `Task.WhenAll`.
+* **Selection Logic**:
+  - If **both** providers return a result, selects the one with the latest `LastUpdatedUtc` timestamp.
+  - If **only one** provider returns a result, uses that result.
+  - If **neither** returns a result (or both throw exceptions), returns a result with `UnifiedStatus.Unknown` and logs the outcome.
+* **Error Resilience**: Catches exceptions thrown by individual providers so that one failing provider does not bring down the entire API request.
+
+### 4.3. Concrete Providers (`AeroTrackFlightStatusProvider` & `QuickFlightFlightStatusProvider`)
+* **Data Fetching**: Stubs out data access (simulating network latency and raw database/external HTTP results).
+* **DTO Mapping**: Converts raw, vendor-specific DTOs (`AeroTrackResponse` and `QuickFlightResponse`) into the unified `FlightStatusResult` model.
 
 ---
 
-## 4. API Endpoint Contract
+## 5. Dependency Flow (Dependency Inversion Principle)
 
-* **Endpoint**: `GET /flights/status`
-* **Query Parameters**:
-  * `flightNumber` (string, Required): The flight designator (e.g., "AA123", "QF9").
-  * `date` (string, Required, Format: `yyyy-MM-dd`): The flight date.
-* **Responses**:
-  * `200 OK`: Returns a normalized `FlightStatusResult` object.
-  * `400 BadRequest`: Returned if `flightNumber` or `date` is missing, or if `date` is in an invalid format.
-  * `500 InternalServerError`: Returned for unhandled system exceptions.
+The system adheres strictly to the **Dependency Inversion Principle (DIP)**:
+1. High-level endpoint routing does not depend on concrete providers. It depends solely on the `IFlightStatusService` interface.
+2. The core `FlightStatusService` does not depend on concrete provider classes. Instead, it accepts an `IEnumerable<IFlightStatusProvider>` in its constructor, injected by the built-in DI container.
+3. Adding a new flight data provider requires only writing a new class implementing `IFlightStatusProvider` and registering it in `Program.cs`. No changes are required to the service or endpoints.
+
+```text
+[HTTP GET Endpoint]
+        │
+        ▼ (Depends on)
+[IFlightStatusService]
+        │
+        ▼ (Implemented by)
+[FlightStatusService]
+        │
+        ▼ (Depends on Collection of)
+[IFlightStatusProvider]
+   ├── AeroTrackFlightStatusProvider  ── (Maps) ──> AeroTrackResponse (Raw DTO)
+   └── QuickFlightFlightStatusProvider ── (Maps) ──> QuickFlightResponse (Raw DTO)
+```
