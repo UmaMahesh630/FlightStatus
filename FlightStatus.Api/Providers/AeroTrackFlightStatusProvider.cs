@@ -3,6 +3,7 @@ namespace FlightStatus.Api.Providers;
 using FlightStatus.Api.Domain.Enums;
 using FlightStatus.Api.Domain.Models;
 using FlightStatus.Api.Dtos;
+using FlightStatus.Api.Services;
 
 /// <summary>
 /// A deterministic stub implementation of <see cref="IFlightStatusProvider"/> simulating the AeroTrack data source.
@@ -108,31 +109,16 @@ public class AeroTrackFlightStatusProvider : IFlightStatusProvider
         {
             FlightNumber = raw.FlightCode,
             Date = DateOnly.Parse(raw.OperatingDate),
-            Status = MapStatus(raw.Status),
+            Status = StatusNormalizer.MapAeroTrackStatus(raw.Status),
             ScheduledDeparture = raw.ScheduledDeparture,
             ActualDeparture = raw.ActualDeparture,
             ScheduledArrival = raw.ScheduledArrival,
             ActualArrival = raw.ActualArrival,
-            Terminal = raw.DepartureTerminal, // Mapping terminal
-            Gate = raw.DepartureGate,           // Mapping gate
-            DelayReason = raw.DelayReason,     // Mapping delay reason
+            Terminal = raw.DepartureTerminal,
+            Gate = raw.DepartureGate,
+            DelayReason = raw.DelayReason,
             DataSource = ProviderName,
             LastUpdatedUtc = DateTime.SpecifyKind(raw.LastUpdated, DateTimeKind.Utc)
-        };
-    }
-
-    /// <summary>
-    /// Normalization rules to map AeroTrack status strings to UnifiedFlightStatus enum values.
-    /// </summary>
-    private static UnifiedFlightStatus MapStatus(string rawStatus)
-    {
-        return rawStatus switch
-        {
-            "ON_TIME" => UnifiedFlightStatus.OnTime,
-            "LATE" => UnifiedFlightStatus.Delayed,
-            "CANCELLED" => UnifiedFlightStatus.Cancelled,
-            "DIVERTED" => UnifiedFlightStatus.Diverted,
-            _ => UnifiedFlightStatus.Unknown
         };
     }
 }

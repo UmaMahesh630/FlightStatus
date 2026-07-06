@@ -3,6 +3,7 @@ namespace FlightStatus.Api.Providers;
 using FlightStatus.Api.Domain.Enums;
 using FlightStatus.Api.Domain.Models;
 using FlightStatus.Api.Dtos;
+using FlightStatus.Api.Services;
 
 /// <summary>
 /// A deterministic stub implementation of <see cref="IFlightStatusProvider"/> simulating the QuickFlight data source.
@@ -43,9 +44,6 @@ public class QuickFlightFlightStatusProvider : IFlightStatusProvider
         return Task.FromResult<FlightStatusResult?>(result);
     }
 
-    /// <summary>
-    /// Mock database of QuickFlight's proprietary minimal schema.
-    /// </summary>
     private QuickFlightResponse? GetRawMockData(string flightNum, DateOnly date)
     {
         return flightNum switch
@@ -54,7 +52,7 @@ public class QuickFlightFlightStatusProvider : IFlightStatusProvider
             {
                 FlightNum = "AI101",
                 Date = date.ToString("yyyy-MM-dd"),
-                StatusCode = "OK",
+                StatusCode = "ON_SCHEDULE",
                 ScheduledDep = date.ToDateTime(new TimeOnly(10, 0, 0)),
                 ScheduledArr = date.ToDateTime(new TimeOnly(18, 0, 0)),
                 UpdatedAtUtc = date.ToDateTime(new TimeOnly(11, 15, 0)) // 11:15 AM UTC (newer than AeroTrack's 11:00 AM)
@@ -63,7 +61,7 @@ public class QuickFlightFlightStatusProvider : IFlightStatusProvider
             {
                 FlightNum = "BA202",
                 Date = date.ToString("yyyy-MM-dd"),
-                StatusCode = "DELAY",
+                StatusCode = "DELAYED",
                 ScheduledDep = date.ToDateTime(new TimeOnly(14, 0, 0)),
                 ScheduledArr = date.ToDateTime(new TimeOnly(20, 0, 0)),
                 UpdatedAtUtc = date.ToDateTime(new TimeOnly(15, 30, 0)) // 3:30 PM UTC (older than AeroTrack's 3:45 PM)
@@ -72,7 +70,7 @@ public class QuickFlightFlightStatusProvider : IFlightStatusProvider
             {
                 FlightNum = "UA303",
                 Date = date.ToString("yyyy-MM-dd"),
-                StatusCode = "CX",
+                StatusCode = "CANCELED",
                 ScheduledDep = date.ToDateTime(new TimeOnly(17, 30, 0)),
                 ScheduledArr = date.ToDateTime(new TimeOnly(23, 45, 0)),
                 UpdatedAtUtc = date.ToDateTime(new TimeOnly(16, 0, 0)) // 4:00 PM UTC (older than AeroTrack's 4:30 PM)
@@ -81,40 +79,22 @@ public class QuickFlightFlightStatusProvider : IFlightStatusProvider
         };
     }
 
-    /// <summary>
-    /// Normalization helper to map QuickFlightResponse to Unified FlightStatusResult.
-    /// </summary>
     private FlightStatusResult MapToUnified(QuickFlightResponse raw)
     {
         return new FlightStatusResult
         {
             FlightNumber = raw.FlightNum,
             Date = DateOnly.Parse(raw.Date),
-            Status = MapStatus(raw.StatusCode),
+            Status = StatusNormalizer.MapQuickFlightStatus(raw.StatusCode),
             ScheduledDeparture = raw.ScheduledDep,
-            ActualDeparture = null, // QuickFlight doesn't return actual times
+            ActualDeparture = null,
             ScheduledArrival = raw.ScheduledArr,
-            ActualArrival = null,   // QuickFlight doesn't return actual times
-            Terminal = null,        // QuickFlight doesn't support terminals
-            Gate = null,            // QuickFlight doesn't support gates
-            DelayReason = null,     // QuickFlight doesn't support delay reasons
+            ActualArrival = null,
+            Terminal = null,
+            Gate = null,
+            DelayReason = null,
             DataSource = ProviderName,
             LastUpdatedUtc = DateTime.SpecifyKind(raw.UpdatedAtUtc, DateTimeKind.Utc)
-        };
-    }
-
-    /// <summary>
-    /// Normalization rules to map QuickFlight status strings to UnifiedFlightStatus enum values.
-    /// </summary>
-    private static UnifiedFlightStatus MapStatus(string statusCode)
-    {
-        return statusCode switch
-        {
-            "OK" => UnifiedFlightStatus.OnTime,
-            "DELAY" => UnifiedFlightStatus.Delayed,
-            "CX" => UnifiedFlightStatus.Cancelled,
-            "DIV" => UnifiedFlightStatus.Diverted,
-            _ => UnifiedFlightStatus.Unknown
         };
     }
 }
