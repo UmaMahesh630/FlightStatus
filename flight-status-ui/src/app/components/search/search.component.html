@@ -1,0 +1,66 @@
+<div class="search-container">
+  <div class="search-box">
+    <div class="logo-area">
+      <span class="logo-icon">✈</span>
+      <h1 class="app-title">SkyRoute Status</h1>
+      <p class="app-subtitle">Real-time normalized flight status lookup</p>
+    </div>
+
+    <!-- Search Form -->
+    <form (ngSubmit)="onSubmit()" class="search-form">
+      <div class="input-group">
+        <label for="flightNumber">Flight Number</label>
+        <div class="input-wrapper">
+          <span class="input-icon">#</span>
+          <input
+            type="text"
+            id="flightNumber"
+            name="flightNumber"
+            placeholder="e.g. AI101, BA202"
+            [ngModel]="flightNumber()"
+            (ngModelChange)="flightNumber.set($event)"
+            required
+            autocomplete="off"
+          />
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label for="date">Departure Date</label>
+        <div class="input-wrapper">
+          <span class="input-icon">📅</span>
+          <input
+            type="date"
+            id="date"
+            name="date"
+            [ngModel]="date()"
+            (ngModelChange)="date.set($event)"
+            required
+          />
+        </div>
+      </div>
+
+      <button type="submit" class="btn-submit" [disabled]="loading()">
+        <span *ngIf="!loading()">Search Flights</span>
+        <span *ngIf="loading()" class="spinner-container">
+          <span class="spinner"></span>
+          Searching...
+        </span>
+      </button>
+    </form>
+
+    <!-- Error Display -->
+    <div class="error-banner animate-fade-in" *ngIf="error()">
+      <span class="error-icon">✕</span>
+      <div class="error-content">
+        <div class="error-title">Lookup Failed</div>
+        <div class="error-message">{{ error() }}</div>
+      </div>
+    </div>
+
+    <!-- Results Display -->
+    <div class="results-wrapper animate-fade-in" *ngIf="result()">
+      <app-result [result]="result()!"></app-result>
+    </div>
+  </div>
+</div>

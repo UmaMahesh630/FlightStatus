@@ -1,0 +1,78 @@
+<div class="result-card" [ngClass]="getStatusClass(result.status)">
+  <div class="card-header">
+    <div class="flight-info">
+      <span class="label">Flight</span>
+      <h2 class="flight-number">{{ result.flightNumber }}</h2>
+    </div>
+    <div class="status-badge" [ngClass]="getStatusClass(result.status)">
+      <span class="status-dot"></span>
+      {{ result.statusText }}
+    </div>
+  </div>
+
+  <div class="card-body">
+    <!-- Schedule Grid -->
+    <div class="schedule-grid">
+      <!-- Departure -->
+      <div class="time-block">
+        <div class="block-title">Departure</div>
+        <div class="time-detail">
+          <span class="time-label">Scheduled</span>
+          <span class="time-value">{{ result.scheduledDeparture | date:'shortTime' }}</span>
+        </div>
+        <div class="time-detail" *ngIf="result.actualDeparture">
+          <span class="time-label">Actual</span>
+          <span class="time-value actual">{{ result.actualDeparture | date:'shortTime' }}</span>
+        </div>
+      </div>
+
+      <!-- Arrow spacer -->
+      <div class="spacer">
+        <span class="arrow">➔</span>
+      </div>
+
+      <!-- Arrival -->
+      <div class="time-block">
+        <div class="block-title">Arrival</div>
+        <div class="time-detail">
+          <span class="time-label">Scheduled</span>
+          <span class="time-value">{{ result.scheduledArrival | date:'shortTime' }}</span>
+        </div>
+        <div class="time-detail" *ngIf="result.actualArrival">
+          <span class="time-label">Actual</span>
+          <span class="time-value actual">{{ result.actualArrival | date:'shortTime' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- AeroTrack Specific Details (Gate & Terminal) -->
+    <div class="vendor-details" *ngIf="result.terminal || result.gate || result.delayReason">
+      <div class="detail-pill" *ngIf="result.terminal">
+        <span class="pill-label">Terminal</span>
+        <span class="pill-value">{{ result.terminal }}</span>
+      </div>
+      <div class="detail-pill" *ngIf="result.gate">
+        <span class="pill-label">Gate</span>
+        <span class="pill-value">{{ result.gate }}</span>
+      </div>
+      <div class="delay-banner" *ngIf="result.delayReason">
+        <span class="warning-icon">⚠</span>
+        <div class="delay-content">
+          <div class="delay-title">Delay / Status Reason</div>
+          <div class="delay-text">{{ result.delayReason }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-footer">
+    <div class="meta-item">
+      <span class="meta-label">Provider:</span>
+      <span class="meta-value">{{ result.dataSource }}</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Last Updated:</span>
+      <span class="meta-value">{{ result.lastUpdatedUtc | date:'medium' }} (UTC)</span>
+    </div>
+  </div>
+</div>
