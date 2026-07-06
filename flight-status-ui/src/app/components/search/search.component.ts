@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { FlightStatusService } from '../../services/flight-status.service';
 import { FlightStatusResult } from '../../models/flight-status.model';
 import { ResultComponent } from '../result/result.component';
@@ -8,16 +8,24 @@ import { ResultComponent } from '../result/result.component';
 @Component({
   selector: 'app-search',
   standalone: true,
-  imports: [CommonModule, FormsModule, ResultComponent],
+  imports: [CommonModule, ReactiveFormsModule, ResultComponent],
   templateUrl: './search.component.html',
   styleUrl: './search.component.css'
 })
 export class SearchComponent {
+  private readonly fb = inject(FormBuilder);
   private readonly flightService = inject(FlightStatusService);
 
-  // Form signals/properties
-  protected readonly flightNumber = signal('');
-  protected readonly date = signal(new Date().toISOString().split('T')[0]);
+  // Define Reactive Form with validation rules matching backend expectations
+  protected readonly searchForm = this.fb.group({
+    flightNumber: ['', [
+      Validators.required, 
+      Validators.pattern(/^[a-zA-Z0-9]{3,10}$/)
+    ]],
+    date: [new Date().toISOString().split('T')[0], [
+      Validators.required
+    ]]
+  });
 
   // UI state signals
   protected readonly loading = signal(false);
@@ -25,21 +33,16 @@ export class SearchComponent {
   protected readonly result = signal<FlightStatusResult | null>(null);
 
   /**
-   * Triggers the flight status lookup and handles responses/errors
+   * Triggers flight search if the form passes validations
    */
   onSubmit(): void {
-    const flight = this.flightNumber().trim().toUpperCase();
-    const targetDate = this.date();
-
-    if (!flight) {
-      this.error.set('Flight number is required.');
+    if (this.searchForm.invalid) {
+      this.searchForm.markAllAsTouched();
       return;
     }
 
-    if (!/^[a-zA-Z0-9]{3,10}$/.test(flight)) {
-      this.error.set('Flight number must be alphanumeric and between 3 and 10 characters.');
-      return;
-    }
+    const flight = this.searchForm.value.flightNumber!.trim().toUpperCase();
+    const targetDate = this.searchForm.value.date!;
 
     this.loading.set(true);
     this.error.set(null);
@@ -68,7 +71,7 @@ export class SearchComponent {
 
     const errorPayload = err.error;
 
-    // Handle ValidationProblemDetails errors format
+    // Handle ValidationProblemDetails format
     if (errorPayload && errorPayload.errors) {
       const errorList = Object.entries(errorPayload.errors)
         .map(([field, messages]) => {

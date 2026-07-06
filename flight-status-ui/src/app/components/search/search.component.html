@@ -6,40 +6,44 @@
       <p class="app-subtitle">Real-time normalized flight status lookup</p>
     </div>
 
-    <!-- Search Form -->
-    <form (ngSubmit)="onSubmit()" class="search-form">
+    <!-- Search Form (Reactive Form) -->
+    <form [formGroup]="searchForm" (ngSubmit)="onSubmit()" class="search-form">
+      <!-- Flight Number input group -->
       <div class="input-group">
         <label for="flightNumber">Flight Number</label>
-        <div class="input-wrapper">
+        <div class="input-wrapper" [ngClass]="{'has-error': searchForm.get('flightNumber')?.touched && searchForm.get('flightNumber')?.invalid}">
           <span class="input-icon">#</span>
           <input
             type="text"
             id="flightNumber"
-            name="flightNumber"
+            formControlName="flightNumber"
             placeholder="e.g. AI101, BA202"
-            [ngModel]="flightNumber()"
-            (ngModelChange)="flightNumber.set($event)"
-            required
             autocomplete="off"
           />
         </div>
+        <div class="validation-error animate-fade-in" *ngIf="searchForm.get('flightNumber')?.touched && searchForm.get('flightNumber')?.invalid">
+          <span *ngIf="searchForm.get('flightNumber')?.errors?.['required']">Flight number is required.</span>
+          <span *ngIf="searchForm.get('flightNumber')?.errors?.['pattern']">Flight number must be alphanumeric and between 3 and 10 characters.</span>
+        </div>
       </div>
 
+      <!-- Date input group -->
       <div class="input-group">
         <label for="date">Departure Date</label>
-        <div class="input-wrapper">
+        <div class="input-wrapper" [ngClass]="{'has-error': searchForm.get('date')?.touched && searchForm.get('date')?.invalid}">
           <span class="input-icon">📅</span>
           <input
             type="date"
             id="date"
-            name="date"
-            [ngModel]="date()"
-            (ngModelChange)="date.set($event)"
-            required
+            formControlName="date"
           />
+        </div>
+        <div class="validation-error animate-fade-in" *ngIf="searchForm.get('date')?.touched && searchForm.get('date')?.invalid">
+          <span *ngIf="searchForm.get('date')?.errors?.['required']">Departure date is required.</span>
         </div>
       </div>
 
+      <!-- Action Button -->
       <button type="submit" class="btn-submit" [disabled]="loading()">
         <span *ngIf="!loading()">Search Flights</span>
         <span *ngIf="loading()" class="spinner-container">
