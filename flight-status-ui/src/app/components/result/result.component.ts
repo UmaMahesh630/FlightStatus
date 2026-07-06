@@ -16,12 +16,18 @@ export class ResultComponent {
   protected readonly FlightStatus = UnifiedFlightStatus;
 
   /**
-   * Helper to determine status-specific styling classes
+   * Helper to determine status-specific styling classes.
+   * Defensively supports both string enums and numeric representations from JSON.
    */
-  getStatusClass(status: UnifiedFlightStatus): string {
-    return status === UnifiedFlightStatus.OnTime ? 'status-green'
-         : status === UnifiedFlightStatus.Delayed ? 'status-amber'
-         : status === UnifiedFlightStatus.Cancelled || status === UnifiedFlightStatus.Diverted ? 'status-red'
-         : 'status-grey';
+  getStatusClass(status: any): string {
+    const isOnTime = status === UnifiedFlightStatus.OnTime || status === 0 || status === '0' || status === 'OnTime';
+    const isDelayed = status === UnifiedFlightStatus.Delayed || status === 1 || status === '1' || status === 'Delayed';
+    const isCancelledOrDiverted = status === UnifiedFlightStatus.Cancelled || status === 2 || status === '2' || status === 'Cancelled' ||
+                                  status === UnifiedFlightStatus.Diverted || status === 3 || status === '3' || status === 'Diverted';
+
+    if (isOnTime) return 'status-green';
+    if (isDelayed) return 'status-amber';
+    if (isCancelledOrDiverted) return 'status-red';
+    return 'status-grey';
   }
 }

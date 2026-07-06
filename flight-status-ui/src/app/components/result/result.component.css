@@ -26,22 +26,46 @@
   border-color: rgba(255, 255, 255, 0.25);
 }
 
-/* Status-specific side borders and backgrounds */
+/* Status-specific card borders, side borders, and backgrounds */
+.result-card.status-green {
+  border-color: rgba(16, 185, 129, 0.35);
+}
+.result-card.status-green:hover {
+  border-color: rgba(16, 185, 129, 0.6);
+}
 .result-card.status-green::before {
   background: #10B981;
   box-shadow: 0 0 15px #10B981;
 }
 
+.result-card.status-amber {
+  border-color: rgba(245, 158, 11, 0.35);
+}
+.result-card.status-amber:hover {
+  border-color: rgba(245, 158, 11, 0.6);
+}
 .result-card.status-amber::before {
   background: #F59E0B;
   box-shadow: 0 0 15px #F59E0B;
 }
 
+.result-card.status-red {
+  border-color: rgba(239, 68, 68, 0.35);
+}
+.result-card.status-red:hover {
+  border-color: rgba(239, 68, 68, 0.6);
+}
 .result-card.status-red::before {
   background: #EF4444;
   box-shadow: 0 0 15px #EF4444;
 }
 
+.result-card.status-grey {
+  border-color: rgba(107, 114, 128, 0.35);
+}
+.result-card.status-grey:hover {
+  border-color: rgba(107, 114, 128, 0.6);
+}
 .result-card.status-grey::before {
   background: #6B7280;
   box-shadow: 0 0 15px #6B7280;

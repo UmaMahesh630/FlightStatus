@@ -15,6 +15,12 @@ var builder = WebApplication.CreateBuilder(args);
 // DEPENDENCY INJECTION & CONFIGURATION REGISTRATION
 // =========================================================================
 
+// Configure JSON Options to serialize enums as strings (compatible with TypeScript string enums)
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+});
+
 // 1. Configure CORS (Cross-Origin Resource Sharing)
 builder.Services.AddCors(options =>
 {
