@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using FlightStatus.Api.Domain.Models;
+using FlightStatus.Api.Middleware;
 using FlightStatus.Api.Providers;
 using FlightStatus.Api.Services;
 
@@ -12,9 +13,7 @@ var builder = WebApplication.CreateBuilder(args);
 // DEPENDENCY INJECTION & CONFIGURATION REGISTRATION
 // =========================================================================
 
-// 1. Configure CORS (Cross-Origin Resource Sharing):
-//    DESIGN RATIONALE: The Angular frontend will run on http://localhost:4200, which is a different origin. 
-//    Enabling a specific CORS policy prevents browser CORS blocks without exposing the API to wildcard risks.
+// 1. Configure CORS (Cross-Origin Resource Sharing)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AngularDevPolicy", policy =>
@@ -25,13 +24,17 @@ builder.Services.AddCors(options =>
     });
 });
 
-// 2. Providers (Strategy Pattern):
-//    We register both concrete implementations of IFlightStatusProvider. The .NET DI container automatically 
-//    groups all registered types under IEnumerable<IFlightStatusProvider> which is then injected into our service.
+// 2. Global Exception Handling and Problem Details (.NET 8 standard):
+//    DESIGN RATIONALE: Registers our custom global IExceptionHandler and enabling built-in support for 
+//    ProblemDetails (RFC 7807) to return standardized machine-readable HTTP error structures.
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
+
+// 3. Providers (Strategy Pattern):
 builder.Services.AddScoped<IFlightStatusProvider, AeroTrackFlightStatusProvider>();
 builder.Services.AddScoped<IFlightStatusProvider, QuickFlightFlightStatusProvider>();
 
-// 3. Orchestration Service:
+// 4. Orchestration Service:
 builder.Services.AddScoped<IFlightStatusService, FlightStatusService>();
 
 // =========================================================================
@@ -39,6 +42,10 @@ builder.Services.AddScoped<IFlightStatusService, FlightStatusService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+
+// Apply Global Exception Handler middleware early in the pipeline to catch downstream exceptions.
+app.UseExceptionHandler();
+
 if (app.Environment.IsDevelopment())
 {
     // Swagger/OpenAPI configuration can go here
@@ -57,14 +64,6 @@ app.UseCors("AngularDevPolicy");
 /// GET /flights/status
 /// Retrieves normalized flight status information for a given flight number and date.
 /// </summary>
-/// <remarks>
-/// ARCHITECTURE & DESIGN DECISIONS:
-/// - **Minimal API Endpoint**: Lightweight routing construct that reduces middleware overhead compared to full MVC controllers.
-/// - **SOLID - Interface Boundary**: Only interacts with IFlightStatusService, satisfying the Dependency Inversion Principle.
-/// - **Defensive Input Validation**: Validates arguments before calling the service. If flightNumber is missing or 
-///   the date format is invalid, returns 400 Bad Request directly to prevent downstream processing errors.
-/// - **OpenAPI Documentation**: Enriched with Produces and summary metadata to support self-documenting APIs.
-/// </remarks>
 app.MapGet("/flights/status", async (
     [FromQuery(Name = "flightNumber")] string? flightNumber,
     [FromQuery(Name = "date")] string? dateStr,
