@@ -2,11 +2,21 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug Backend (.NET)",
-      "type": "dotnet",
+      "name": ".NET Core Launch (web)",
+      "type": "coreclr",
       "request": "launch",
-      "projectPath": "${workspaceFolder}/FlightStatus.Api/FlightStatus.Api.csproj",
-      "launchSettingsProfile": "http"
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/FlightStatus.Api/bin/Debug/net8.0/FlightStatus.Api.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/FlightStatus.Api",
+      "stopAtEntry": false,
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+      },
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
     }
   ]
 }
