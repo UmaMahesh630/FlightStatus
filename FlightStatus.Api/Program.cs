@@ -36,6 +36,10 @@ builder.Services.AddCors(options =>
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
+// Register Swagger services for interactive documentation
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
 // 3. Register FluentValidation Validators:
 //    DESIGN DECISION: Registers all validators (like FlightStatusRequestValidator) automatically from 
 //    the assembly, reducing registration maintenance effort as more validators are created.
@@ -59,7 +63,8 @@ app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
 {
-    // Swagger/OpenAPI configuration can go here
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
 if (!app.Environment.IsDevelopment())
