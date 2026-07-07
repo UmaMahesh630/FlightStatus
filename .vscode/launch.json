@@ -17,7 +17,8 @@
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
-      "justMyCode": false
+      "justMyCode": false,
+      "targetArchitecture": "arm64"
     }
   ]
 }
