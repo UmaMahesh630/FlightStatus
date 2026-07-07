@@ -18,11 +18,9 @@ public record FlightStatusRequest
 {
     [FromQuery(Name = "flightNumber")]
     [Required(ErrorMessage = "Flight number is required.")]
-    [RegularExpression(@"^[A-Z]{2,3}\d{1,4}$", ErrorMessage = "Flight number must consist of 2 to 3 uppercase letters followed by 1 to 4 digits (e.g., AI101).")]
     public string? FlightNumber { get; init; }
 
     [FromQuery(Name = "date")]
     [Required(ErrorMessage = "Date is required.")]
-    [RegularExpression(@"^\d{4}-\d{2}-\d{2}$", ErrorMessage = "Date must be in yyyy-MM-dd format.")]
     public string? DateStr { get; init; }
 }
