@@ -62,7 +62,10 @@ if (app.Environment.IsDevelopment())
     // Swagger/OpenAPI configuration can go here
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 // Apply CORS Policy
 app.UseCors("AngularDevPolicy");
