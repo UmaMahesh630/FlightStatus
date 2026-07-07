@@ -6,7 +6,7 @@ AI tools used:
 - GitHub Copilot
 - Antigravity
 
-All generated code was reviewed and modified before being committed.
+All generated code was reviewed and modified before being committed to maintain high software standards and architectural integrity.
 
 ---
 
@@ -22,7 +22,7 @@ Accepted
 
 ### Notes
 
-The suggested architecture matched the requirements. Folder names were slightly renamed to fit the project.
+The proposed architecture defined a clean separation of concerns across projects. The backend is structured into domain models, mappers, and services, whereas the Angular frontend uses standalone components to separate the search forms and the result displays. Folder and file naming conventions were slightly adjusted to match standard enterprise practices.
 
 ---
 
@@ -38,7 +38,7 @@ Accepted
 
 ### Notes
 
-Minor property name changes were made for consistency.
+We created the `FlightStatusResult` model to represent the final, normalized state of a flight status query. We also created DTOs for the separate third-party providers (AeroTrack and QuickFlight) to cleanly model their raw responses. Minor property name adjustments were made to ensure full consistency between backend serialization properties and client-side TypeScript bindings.
 
 ---
 
@@ -54,7 +54,7 @@ Accepted
 
 ### Notes
 
-Changed the method name from GetFlightAsync() to GetFlightStatusAsync() to better reflect its purpose.
+We generated the `IFlightStatusProvider` interface, establishing a strategy contract for third-party integrations. This allows us to handle different flight data providers interchangeably. We renamed the method signature from `GetFlightAsync()` to `GetFlightStatusAsync()` to clearly indicate that it queries the status of a flight rather than just general flight information.
 
 ---
 
@@ -70,7 +70,7 @@ Accepted
 
 ### Notes
 
-Added additional hardcoded flights to improve testing.
+We generated `AeroTrackFlightStatusProvider` and `QuickFlightFlightStatusProvider` stub implementations. They hold hardcoded mock data to simulate real provider endpoints. We added multiple test cases (`AI101`, `BA202`, and `UA303`) with varying timestamps to let us verify how our conflict resolution logic works under realistic scenarios.
 
 ---
 
@@ -86,7 +86,7 @@ Rejected
 
 ### Reason
 
-The generated service called the providers sequentially and directly referenced the concrete provider classes. This did not satisfy the dependency injection and provider abstraction requirements.
+The generated code had two main issues. First, it executed the provider requests one after the other (sequentially) instead of running them at the same time (in parallel). Second, it was tightly coupled to the concrete class names instead of using dependency injection with the `IFlightStatusProvider` interface, which violated the Dependency Inversion Principle.
 
 ---
 
@@ -107,7 +107,7 @@ Accepted
 
 ### Notes
 
-This implementation aligned with the required business rules and architecture.
+The updated code injects all registered providers as a collection (`IEnumerable<IFlightStatusProvider>`). It queries them in parallel using `Task.WhenAll` to ensure low response times. If multiple providers return a result, it resolves conflicts by picking the one with the most recent `LastUpdatedUtc` timestamp. It also catches individual provider errors and logs them using structured logging to ensure the system remains resilient.
 
 ---
 
@@ -123,7 +123,7 @@ Accepted
 
 ### Notes
 
-Added Unknown as the default value for unmapped statuses.
+We created the static `StatusNormalizer` containing pure, stateless mapper functions to translate vendor-specific statuses (like `ON_TIME` or `ON_SCHEDULE`) into the unified `UnifiedFlightStatus` enum values. We added a fallback that maps any unknown or unrecognized status string to `UnifiedFlightStatus.Unknown` to ensure the mapper never crashes.
 
 ---
 
@@ -139,7 +139,7 @@ Accepted
 
 ### Notes
 
-Adjusted route naming to match project conventions.
+We added a Minimal API endpoint for `GET /flights/status`. It registers services via dependency injection and uses a custom endpoint filter (`ValidationFilter`) to run checks on input parameters before executing the endpoint, returning a standardized RFC 7807 `ProblemDetails` error payload when validation fails. The route configuration and parameter names were adjusted to match project conventions.
 
 ---
 
@@ -152,6 +152,10 @@ Generate an Angular search page using Reactive Forms for flight number and date 
 ### Result
 
 Accepted
+
+### Notes
+
+We created a standalone `SearchComponent` built with Angular Reactive Forms. It configures form controls for both the flight number and the departure date. It runs input format validation rules locally on the client and manages loading animations and error banners dynamically based on HTTP request statuses.
 
 ---
 
@@ -167,7 +171,7 @@ Accepted
 
 ### Notes
 
-Modified spacing and Bootstrap classes.
+We created `ResultComponent` to display flight status results in a premium, glassmorphic layout. It conditionally renders specific details like `terminal`, `gate`, and `delayReason` only if they are present in the response, hiding empty elements to keep the interface neat and clean.
 
 ---
 
@@ -183,7 +187,7 @@ Rejected
 
 ### Reason
 
-The generated HTML used fixed Bootstrap classes, causing the badge to remain red regardless of the actual status.
+The generated HTML code did not dynamically bind color classes based on the status enum values. Instead, it used fixed CSS classes, meaning the flight status card borders and badges remained static and could not change colors based on different API status responses.
 
 ---
 
@@ -206,7 +210,7 @@ Accepted
 
 ### Notes
 
-Used ngClass to bind CSS classes based on the normalized status.
+We updated the HTML and TypeScript code to dynamically bind classes via `ngClass` based on the normalized flight status enum. We added status-specific styling overrides in the CSS so that the card borders and status badges light up in green, amber, red, or grey depending on whether the flight is On Time, Delayed, Cancelled, or Unknown.
 
 ---
 
@@ -224,6 +228,10 @@ Generate xUnit tests covering:
 
 Accepted
 
+### Notes
+
+We developed a complete suite of 42 xUnit tests verifying our service mappings, parallel execution flows, error logging resilience, and request parameter validation rules. This ensures any future code updates will not break the core functionality of the system.
+
 ---
 
 # Prompt 14 – README
@@ -238,7 +246,7 @@ Accepted
 
 ### Notes
 
-Added screenshots and additional setup instructions manually.
+We wrote a comprehensive developer manual outlining project organization, architectural decisions, code designs (like records and aspect-oriented validations), assumptions about local test data, setup commands, and runtime test guides.
 
 ---
 
@@ -254,7 +262,7 @@ Rejected
 
 ### Reason
 
-The generated logging used Console.WriteLine() instead of ILogger.
+The generated code was using basic `Console.WriteLine` statements to output debug logs. This did not meet production standards because it bypassed structured logging configurations, making it impossible to query or store log entries in external monitoring services.
 
 ---
 
@@ -268,6 +276,10 @@ Generate structured logging using ILogger for provider calls, failures, and prov
 
 Accepted
 
+### Notes
+
+We refactored the log statements to use .NET's built-in `ILogger` interface. This enables structured logging, allowing the system to output logs with structured metadata fields for query parameters, provider selection metrics, and exception messages.
+
 ---
 
 # Prompt 17 – Global Exception Handling
@@ -280,6 +292,10 @@ Generate middleware that converts unhandled exceptions into ProblemDetails respo
 
 Accepted
 
+### Notes
+
+We created a `GlobalExceptionHandler` middleware implementing .NET 8's native `IExceptionHandler` interface. It captures any unhandled runtime exceptions globally, formats them into structured RFC 7807 `ProblemDetails` payloads, and returns them as HTTP responses.
+
 ---
 
 # Prompt 18 – Reflection Document
@@ -291,6 +307,10 @@ Generate reflection.md describing assumptions, trade-offs, lessons learned, and 
 ### Result
 
 Accepted
+
+### Notes
+
+We wrote a reflection log detailing architecture trade-offs (like static mappers vs. injected mappers, parallel task performance, and resilient fallback strategies), challenges faced during macOS setup, production scaling improvements (like Redis caching and Polly circuit breakers), and future roadmaps.
 
 ---
 
