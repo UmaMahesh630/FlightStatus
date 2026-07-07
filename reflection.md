@@ -64,3 +64,20 @@ If scaling this system to support millions of queries in a real-world environmen
 * **Dynamic Provider Discovery**: Moving provider registrations from hardcoded DI lines to configuration-driven assemblies, letting us add or disable providers by modifying an `appsettings.json` file without recompiling.
 * **SignalR Push Updates**: Implementing a WebSocket/SignalR connection to push live status changes (e.g., gate updates, delayed status) directly to the support agent's screen without requiring manual page refreshes.
 * **Query Auditing Database**: Logging queries, provider response times, and selection outcomes into a database to audit provider SLA performance and verify that the selection algorithm is functioning correctly in production.
+
+---
+
+## 7. Git Workflow
+
+This coding exercise was designed to be completed within a single day. To maximize the time available for implementation, testing, and documentation, I worked directly on the `main` branch.
+
+In a production environment, I would follow a structured Git workflow:
+
+- Create a feature branch from `develop` (or `main`, depending on the team's branching strategy).
+- Make small, logical commits for each completed task.
+- Open a Pull Request for peer review.
+- Address review comments.
+- Merge into `develop`.
+- Promote to `main` after validation and testing.
+
+If more development time had been available, I would also have organized the work into multiple feature branches with incremental commits to better reflect a typical collaborative workflow.
