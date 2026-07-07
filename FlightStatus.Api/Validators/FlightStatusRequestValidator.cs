@@ -21,7 +21,7 @@ public class FlightStatusRequestValidator : AbstractValidator<FlightStatusReques
         RuleFor(x => x.FlightNumber)
             .Cascade(CascadeMode.Stop)
             .NotEmpty().WithMessage("Flight number is required.")
-            .Matches(@"^[a-zA-Z0-9]{3,10}$").WithMessage("Flight number must be alphanumeric and between 3 and 10 characters.");
+            .Matches(@"^[A-Z]{2,3}\d{1,4}$").WithMessage("Flight number must consist of 2 to 3 uppercase letters followed by 1 to 4 digits (e.g., AI101).");
 
         RuleFor(x => x.DateStr)
             .Cascade(CascadeMode.Stop)

@@ -58,8 +58,15 @@ public class FlightStatusRequestValidatorTests
     [Theory]
     [InlineData("A")]
     [InlineData("AB")]
-    [InlineData("ABC123456789")] // Over 10 characters
-    [InlineData("AI-101")] // Symbol not allowed
+    [InlineData("ABC123456789")]
+    [InlineData("AI-101")]
+    [InlineData("hjgjhgj")]
+    [InlineData("abcdef")]
+    [InlineData("test123")]
+    [InlineData("ai101")]
+    [InlineData("AI10100")]
+    [InlineData("A101")]
+    [InlineData("AAAA101")]
     public void Validator_WithInvalidFlightNumberFormat_ShouldFail(string flightNumber)
     {
         // Arrange

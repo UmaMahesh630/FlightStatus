@@ -18,7 +18,7 @@ public record FlightStatusRequest
 {
     [FromQuery(Name = "flightNumber")]
     [Required(ErrorMessage = "Flight number is required.")]
-    [StringLength(10, MinimumLength = 3, ErrorMessage = "Flight number must be between 3 and 10 characters.")]
+    [RegularExpression(@"^[A-Z]{2,3}\d{1,4}$", ErrorMessage = "Flight number must consist of 2 to 3 uppercase letters followed by 1 to 4 digits (e.g., AI101).")]
     public string? FlightNumber { get; init; }
 
     [FromQuery(Name = "date")]
