@@ -5,7 +5,8 @@
       "name": ".NET Core Attach (Standard)",
       "type": "coreclr",
       "request": "attach",
-      "processId": "${command:pickProcess}"
+      "processId": "${command:pickProcess}",
+      "justMyCode": false
     }
   ]
 }
