@@ -343,3 +343,53 @@ Accepted
 ### Notes
 
 Removed `[RegularExpression]` attributes from the request DTO and delegated formatting validations entirely to the FluentValidation pipeline inside the endpoint `ValidationFilter`. This successfully forces Swagger UI to send the request to the server, displaying the structured HTTP 400 ProblemDetails schema in the Response section as expected.
+
+---
+
+# Prompt 21 – Production-Ready Code Review & Clean Comments
+
+### Prompt
+
+Perform a final production-ready code review of my solution. Review every C# and Angular file and improve the comments. Reduce comment noise, remove obvious comments, keep only comments that provide long-term maintenance value, and rewrite comments in a concise, professional style explaining architecture, business rules, assumptions, and non-obvious decisions.
+
+### Result
+
+Accepted
+
+### Notes
+
+Cleaned up comments across 18 source files. Removed 124 trivial inline comments, rewrote 20 to focus on design/architectural decisions, and retained 20 method descriptions. Ensured zero compiler warnings and verified all tests pass cleanly.
+
+---
+
+# Prompt 22 – Git Workflow Documentation in Reflection
+
+### Prompt
+
+Update and push in reflection.md file:
+"## Git Workflow
+This coding exercise was designed to be completed within a single day. To maximize the time available for implementation, testing, and documentation, I worked directly on the main branch..."
+
+### Result
+
+Accepted
+
+### Notes
+
+Added Section 7 "Git Workflow" to `reflection.md` documenting branching practices, PEER reviews, and promotional pipelines from develop to main.
+
+---
+
+# Prompt 23 – API-Level Integration Tests
+
+### Prompt
+
+Review my .NET 8 Minimal API solution and generate API-level integration tests using xUnit and Microsoft.AspNetCore.Mvc.Testing (WebApplicationFactory). Start the API in memory without hosting it manually, testing the complete HTTP pipeline without mocking endpoints. Test 8 specific scenarios covering valid requests, missing/invalid parameters, unknown flights, provider prioritization (latest timestamp), and single/dual provider crash fault tolerance.
+
+### Result
+
+Accepted
+
+### Notes
+
+Installed `Microsoft.AspNetCore.Mvc.Testing` in the tests project. Configured the tests target framework to `net9.0` to prevent `UnflushedBytes` serialization crashes on local .NET 9 SDK development environments. Wrote 11 test cases inside `FlightStatusIntegrationTests.cs` using inline NSubstitute mocked service providers to simulate supplier exceptions. All 60/60 tests run and pass successfully.
