@@ -6,6 +6,8 @@
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <RollForward>Major</RollForward>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>portable</DebugType>
   </PropertyGroup>
 
   <ItemGroup>
