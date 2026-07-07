@@ -124,14 +124,29 @@ npm start
 * **Access**: Open `http://localhost:4200` in your web browser.
 * **CORS Integration**: The API contains an active policy allowing requests from origin `http://localhost:4200`, preventing browser CORS blocking.
 
-### 4.4. Running the Test Suite
-From the root directory:
+## Testing
+
+The solution includes both Unit Tests and API Integration Tests.
+
+### Unit Tests
+- Status normalization
+- Provider selection logic
+- Provider failure handling
+- Business rule validation
+
+### API Integration Tests
+- Successful request (HTTP 200)
+- Missing flight number (HTTP 400)
+- Missing date (HTTP 400)
+- Invalid flight number (HTTP 400)
+- Unknown flight response
+- Latest LastUpdatedUtc provider selection
+
+Run all tests using:
+
 ```bash
 dotnet test
 ```
-* Executing this command runs **60 xUnit test scenarios** with zero warnings or errors.
-* **Unit Tests (49 scenarios)**: Verify request parameters validation syntax, stateless mapping normalizers, concurrent lookup orchestrators, and fallback policies in isolation.
-* **Integration Tests (11 scenarios)**: Boot the application in-memory via `WebApplicationFactory<Program>` to test the full HTTP middleware pipeline (including CORS, CORS headers, ExceptionHandler, Serialization, and ValidationFilters) end-to-end.
 
 ---
 
