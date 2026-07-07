@@ -44,7 +44,8 @@ FlightStatus/                          # Repository Root
 ├── FlightStatus.Tests/                # xUnit Test Suite
 │   ├── StatusNormalizerTests.cs       # Verifies provider status translations
 │   ├── FlightStatusServiceTests.cs    # Verifies selection, resilience, and fallback rules
-│   └── FlightStatusRequestValidatorTests.cs # Verifies input validation bounds
+│   ├── FlightStatusRequestValidatorTests.cs # Verifies input validation bounds
+│   └── FlightStatusIntegrationTests.cs # End-to-end API integration tests (in-memory)
 │
 └── flight-status-ui/                  # Angular 19 SPA Frontend
     ├── src/
@@ -128,7 +129,9 @@ From the root directory:
 ```bash
 dotnet test
 ```
-* Executing this command runs 42 xUnit tests verifying normalization logic, DI setup, validation, concurrency selection, and resilient fallbacks with zero warnings or errors.
+* Executing this command runs **60 xUnit test scenarios** with zero warnings or errors.
+* **Unit Tests (49 scenarios)**: Verify request parameters validation syntax, stateless mapping normalizers, concurrent lookup orchestrators, and fallback policies in isolation.
+* **Integration Tests (11 scenarios)**: Boot the application in-memory via `WebApplicationFactory<Program>` to test the full HTTP middleware pipeline (including CORS, CORS headers, ExceptionHandler, Serialization, and ValidationFilters) end-to-end.
 
 ---
 

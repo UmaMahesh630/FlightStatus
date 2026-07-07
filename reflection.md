@@ -81,3 +81,25 @@ In a production environment, I would follow a structured Git workflow:
 - Promote to `main` after validation and testing.
 
 If more development time had been available, I would also have organized the work into multiple feature branches with incremental commits to better reflect a typical collaborative workflow.
+
+---
+
+## 8. Testing Strategy & Coverage
+
+The testing framework employs a dual strategy of **Unit Testing** and **API Integration Testing** to guarantee both individual component correctness and system-wide pipeline integrity.
+
+### 8.1. Unit Testing Strategy
+* **Scope**: Business logic verification in isolation (no web hosting dependencies).
+* **Components Tested**:
+  * **Input Validation (`FlightStatusRequestValidatorTests`)**: Evaluates FluentValidation syntax boundary constraints for flight numbers (length, character bounds, case sensitivity) and dates (calendar validity, separators).
+  * **Status Normalizer (`StatusNormalizerTests`)**: Asserts that disparate third-party status keywords map securely to canonical enums (with strict case-insensitivity and default fallbacks).
+  * **Orchestration Service (`FlightStatusServiceTests`)**: Employs NSubstitute to verify parallel execution (`Task.WhenAll`), timestamp resolution algorithm (newest selected), and single-supplier error catching (graceful degradation).
+
+### 8.2. Integration Testing Strategy
+* **Scope**: Pipeline execution end-to-end from HTTP request arrival to JSON serialization.
+* **Tooling**: Uses `Microsoft.AspNetCore.Mvc.Testing` and `WebApplicationFactory<Program>` to host the Minimal API in-memory.
+* **Pipeline Coverage**:
+  * **Middleware Interception**: Asserts that `ValidationFilter` blocks invalid query parameters early and generates structured RFC 7807 `ValidationProblem` response bodies instead of client-side swagger blocks.
+  * **CORS & HTTP Conventions**: Verifies status codes (`200 OK` vs `400 Bad Request`) and JSON serialization converter settings (verifying string enum outputs).
+  * **Dependency Overrides (`ConfigureTestServices`)**: Customizes in-memory service registrations during tests to simulate connection timeouts and supplier crashes, asserting that the endpoint handles failures gracefully without crashing.
+  * **SDK Compatibility**: The test suite targets `net9.0` to match the developer SDK environment runtime, preventing `UnflushedBytes` serialization crashes on memory pipes.
