@@ -1,4 +1,4 @@
-# SkyRoute Flight Status Lookup System
+# FlightStatus Lookup System
 
 A modern, high-performance, full-stack application built for support agents to query, aggregate, and display normalized flight status information from multiple third-party providers.
 
