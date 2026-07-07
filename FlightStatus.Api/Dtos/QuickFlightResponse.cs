@@ -1,16 +1,11 @@
 namespace FlightStatus.Api.Dtos;
 
 /// <summary>
-/// Raw Data Transfer Object (DTO) capturing the minimal response schema from the QuickFlight provider.
+/// Raw Data Transfer Object capturing the response schema from the QuickFlight supplier.
 /// </summary>
 /// <remarks>
-/// ARCHITECTURE & DESIGN DECISION: Interface Boundary & Anti-Corruption Layer (ACL)
-/// - **Strategy**: Data Transfer Object (DTO) pattern.
-/// - **Rationale**: Like AeroTrackResponse, this isolates the vendor-specific minimal contract. It lacks terminal, 
-///   gate, and delay details, highlighting why we map vendor DTOs into a unified model where these fields are 
-///   optional (nullable).
-/// - **Alternative**: Forcing QuickFlight to return terminal and gate fields containing placeholder/dummy values. 
-///   Instead, mapping it to a unified class with nullable fields naturally models vendor variance.
+/// Serves as part of the Anti-Corruption Layer (ACL), isolating QuickFlight's custom schema 
+/// from the application domain.
 /// </remarks>
 public record QuickFlightResponse
 {

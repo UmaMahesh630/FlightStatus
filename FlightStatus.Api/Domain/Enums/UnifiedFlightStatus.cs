@@ -1,16 +1,11 @@
 namespace FlightStatus.Api.Domain.Enums;
 
 /// <summary>
-/// Represents the canonical flight status values normalized within our application.
+/// Canonical flight status values normalized within the application domain.
 /// </summary>
 /// <remarks>
-/// ARCHITECTURE & DESIGN DECISION: Decoupled Domain Vocabulary
-/// - **Strategy**: Clean Architecture / Domain-Driven Design (DDD).
-/// - **Rationale**: External providers use conflicting vocabularies (e.g., "LATE" vs "DELAY", "CX" vs "CANCELLED").
-///   Defining a canonical enum inside our Domain layer prevents provider-specific naming conventions from leaking 
-///   into our business logic or frontend.
-/// - **SOLID Principle**: Single Responsibility Principle (SRP). This enum does exactly one thing: define our 
-///   internal business statuses.
+/// Acts as an Anti-Corruption Layer boundary to isolate vendor status vocabularies 
+/// (e.g. "LATE" vs "ON_SCHEDULE") from internal models and frontend applications.
 /// </remarks>
 public enum UnifiedFlightStatus
 {

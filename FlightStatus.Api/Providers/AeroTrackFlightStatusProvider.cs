@@ -6,29 +6,18 @@ using FlightStatus.Api.Dtos;
 using FlightStatus.Api.Services;
 
 /// <summary>
-/// A deterministic stub implementation of <see cref="IFlightStatusProvider"/> simulating the AeroTrack data source.
+/// AeroTrack supplier implementation.
 /// </summary>
 /// <remarks>
-/// ARCHITECTURE & DESIGN DECISIONS:
-/// - **Strategy Pattern Implementation**: Implements the strategy interface to supply AeroTrack-specific data fetching and normalization.
-/// - **Anti-Corruption Layer (ACL)**: Raw AeroTrack DTOs (`AeroTrackResponse`) are processed and mapped into the internal domain model 
-///   (`FlightStatusResult`) to prevent external naming schemes (e.g. "FlightCode", "LATE") from polluting internal systems.
-/// - **Single Responsibility Principle (SRP)**: This class is solely responsible for modeling AeroTrack's data contract, simulating its retrieval, 
-///   and performing its specific data transformation.
+/// Simulates AeroTrack's proprietary schema, mapping responses to the unified domain record.
 /// </remarks>
 public class AeroTrackFlightStatusProvider : IFlightStatusProvider
 {
     public string ProviderName => "AeroTrack";
 
-    /// <summary>
-    /// Simulates retrieving flight status from AeroTrack and normalizes it.
-    /// </summary>
     public Task<FlightStatusResult?> GetStatusAsync(string flightNumber, DateOnly date)
     {
-        // Normalize input for case-insensitive matching
         var normalizedFlightNum = flightNumber.Trim().ToUpperInvariant();
-
-        // Simulate database/API retrieval of raw vendor data
         var rawResponse = GetRawMockData(normalizedFlightNum, date);
 
         if (rawResponse == null)
@@ -36,7 +25,6 @@ public class AeroTrackFlightStatusProvider : IFlightStatusProvider
             return Task.FromResult<FlightStatusResult?>(null);
         }
 
-        // Map raw response to unified domain model
         var result = MapToUnified(rawResponse);
         return Task.FromResult<FlightStatusResult?>(result);
     }
@@ -54,7 +42,7 @@ public class AeroTrackFlightStatusProvider : IFlightStatusProvider
                 OperatingDate = date.ToString("yyyy-MM-dd"),
                 Status = "ON_TIME",
                 ScheduledDeparture = date.ToDateTime(new TimeOnly(10, 0, 0)),
-                ActualDeparture = date.ToDateTime(new TimeOnly(10, 5, 0)), // 5 mins late (On Time)
+                ActualDeparture = date.ToDateTime(new TimeOnly(10, 5, 0)),
                 ScheduledArrival = date.ToDateTime(new TimeOnly(18, 0, 0)),
                 ActualArrival = date.ToDateTime(new TimeOnly(18, 2, 0)),
                 DepartureTerminal = "T3",
@@ -62,7 +50,7 @@ public class AeroTrackFlightStatusProvider : IFlightStatusProvider
                 ArrivalTerminal = "T1",
                 ArrivalGate = "Gate B4",
                 DelayReason = null,
-                LastUpdated = date.ToDateTime(new TimeOnly(11, 0, 0)) // 11:00 AM UTC update
+                LastUpdated = date.ToDateTime(new TimeOnly(11, 0, 0))
             },
             "BA202" => new AeroTrackResponse
             {
@@ -70,7 +58,7 @@ public class AeroTrackFlightStatusProvider : IFlightStatusProvider
                 OperatingDate = date.ToString("yyyy-MM-dd"),
                 Status = "LATE",
                 ScheduledDeparture = date.ToDateTime(new TimeOnly(14, 0, 0)),
-                ActualDeparture = date.ToDateTime(new TimeOnly(15, 30, 0)), // 90 mins late (Delayed)
+                ActualDeparture = date.ToDateTime(new TimeOnly(15, 30, 0)),
                 ScheduledArrival = date.ToDateTime(new TimeOnly(20, 0, 0)),
                 ActualArrival = date.ToDateTime(new TimeOnly(21, 15, 0)),
                 DepartureTerminal = "T5",
@@ -78,7 +66,7 @@ public class AeroTrackFlightStatusProvider : IFlightStatusProvider
                 ArrivalTerminal = "T3",
                 ArrivalGate = "Gate C1",
                 DelayReason = "Late incoming aircraft due to weather conditions",
-                LastUpdated = date.ToDateTime(new TimeOnly(15, 45, 0)) // 3:45 PM UTC update
+                LastUpdated = date.ToDateTime(new TimeOnly(15, 45, 0))
             },
             "UA303" => new AeroTrackResponse
             {
@@ -94,15 +82,12 @@ public class AeroTrackFlightStatusProvider : IFlightStatusProvider
                 ArrivalTerminal = "T2",
                 ArrivalGate = "Gate A9",
                 DelayReason = "Technical crew availability issue",
-                LastUpdated = date.ToDateTime(new TimeOnly(16, 30, 0)) // 4:30 PM UTC update
+                LastUpdated = date.ToDateTime(new TimeOnly(16, 30, 0))
             },
             _ => null
         };
     }
 
-    /// <summary>
-    /// Normalization helper to map AeroTrackResponse to Unified FlightStatusResult.
-    /// </summary>
     private FlightStatusResult MapToUnified(AeroTrackResponse raw)
     {
         return new FlightStatusResult

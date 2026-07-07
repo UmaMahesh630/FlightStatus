@@ -6,9 +6,8 @@ using FlightStatus.Api.Domain.Models;
 /// Service coordinating flight status queries across multiple external data providers.
 /// </summary>
 /// <remarks>
-/// ARCHITECTURE & DESIGN DECISIONS:
-/// - **Orchestration Service Layer**: Acting as a single entry point for API endpoints to perform business processes.
-/// - **SOLID - Dependency Inversion Principle (DIP)**: Endpoints depend on this interface, not the concrete implementation.
+/// Acts as the orchestration layer boundary, fetching vendor details in parallel and 
+/// resolving timing conflicts.
 /// </remarks>
 public interface IFlightStatusService
 {

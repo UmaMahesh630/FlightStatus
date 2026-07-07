@@ -1,17 +1,11 @@
 namespace FlightStatus.Api.Dtos;
 
 /// <summary>
-/// Raw Data Transfer Object (DTO) capturing the verbose response schema from the AeroTrack provider.
+/// Raw Data Transfer Object capturing the response schema from the AeroTrack supplier.
 /// </summary>
 /// <remarks>
-/// ARCHITECTURE & DESIGN DECISION: Interface Boundary & Anti-Corruption Layer (ACL)
-/// - **Strategy**: Data Transfer Object (DTO) pattern.
-/// - **Rationale**: External vendor contracts are unstable and outside our control. If AeroTrack changes its schema, 
-///   only this DTO and its corresponding provider adapter require changes. This insulates our core domain model 
-///   from external volatility (Anti-Corruption Layer).
-/// - **Alternative**: Reusing the domain model (`FlightStatusResult`) to deserialize vendor responses directly. 
-///   This would tightly couple our API contracts to third-party providers, violating the Single Responsibility Principle 
-///   and making it hard to add or drop vendors.
+/// Serves as part of the Anti-Corruption Layer (ACL). Insulates core domain models 
+/// from third-party vendor schema volatility.
 /// </remarks>
 public record AeroTrackResponse
 {

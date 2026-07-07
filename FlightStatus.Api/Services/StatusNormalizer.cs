@@ -3,18 +3,10 @@ namespace FlightStatus.Api.Services;
 using FlightStatus.Api.Domain.Enums;
 
 /// <summary>
-/// A utility service containing pure mapping functions for normalizing flight status strings from multiple providers.
+/// Utility containing pure mapping functions for normalizing supplier status codes.
 /// </summary>
 /// <remarks>
-/// ARCHITECTURE & DESIGN DECISIONS:
-/// - **Pure Functions / Static Class**: Status normalization is side-effect free, deterministic, and stateless. 
-///   Using a static class with pure functions avoids unnecessary dependency injection overhead, eliminates heap 
-///   allocations, and simplifies testing (no mocking of normalizer is required).
-/// - **Alternative (Injected Service)**: Registering an `IFlightStatusNormalizer` in DI. This is an alternative if 
-///   status rules were dynamically loaded from a database. For static, compilation-bound rules, pure functions 
-///   are simpler and more performant.
-/// - **Single Responsibility Principle (SRP)**: This class is the single source of truth for converting provider-specific 
-///   status vocabularies. If a provider changes their status codes, this is the only class that needs to change.
+/// Contains pure, stateless functions to translate supplier status codes to UnifiedFlightStatus.
 /// </remarks>
 public static class StatusNormalizer
 {

@@ -6,21 +6,11 @@ using FlightStatus.Api.Providers;
 using Microsoft.Extensions.Logging;
 
 /// <summary>
-/// Default implementation of <see cref="IFlightStatusService"/> that orchestrates concurrent provider queries.
+/// Orchestrates concurrent queries to all registered suppliers.
 /// </summary>
 /// <remarks>
-/// ARCHITECTURE & DESIGN DECISIONS:
-/// - **Scatter-Gather Pattern**: Queries multiple registered providers concurrently via <c>Task.WhenAll</c> 
-///   to minimize API lookup latency (since network lookups can run in parallel).
-/// - **Resilience / Graceful Degradation**: Individual provider failures are intercepted and logged using a try-catch blocks 
-///   within the helper task. A single provider crash does not break the entire lookup operation (fault isolation).
-/// - **Conflict Resolution Strategy**: Resolves status discrepancy by comparing the <c>LastUpdatedUtc</c> timestamp 
-///   of each result and selecting the most recent update.
-/// - **SOLID Principles**:
-///   - **Single Responsibility Principle (SRP)**: This class only handles orchestration, logging, and conflict resolution. 
-///     It has no knowledge of how raw provider DTOs are mapped or how network calls are made.
-///   - **Open-Closed Principle (OCP)**: Scalable to any number of providers. New providers can be added without altering this class.
-///   - **Dependency Inversion Principle (DIP)**: Depends entirely on abstractions (<c>IFlightStatusProvider</c> and <c>ILogger</c>).
+/// Queries multiple suppliers in parallel via Task.WhenAll. Resolves conflict records 
+/// by selecting the result with the latest LastUpdatedUtc timestamp.
 /// </remarks>
 public class FlightStatusService : IFlightStatusService
 {
@@ -49,13 +39,8 @@ public class FlightStatusService : IFlightStatusService
             return CreateUnknownFallback(flightNumber, date, "No providers configured in the system.");
         }
 
-        // Fire off lookup tasks to all registered providers concurrently
         var queryTasks = _providers.Select(provider => GetSafeStatusAsync(provider, flightNumber, date)).ToList();
-
-        // Await completion of all parallel queries
         var rawResults = await Task.WhenAll(queryTasks);
-
-        // Filter out null responses (failures or "Not Found" states)
         var validResults = rawResults.Where(r => r != null).Cast<FlightStatusResult>().ToList();
 
         if (validResults.Count == 0)
@@ -71,7 +56,6 @@ public class FlightStatusService : IFlightStatusService
             return singleResult;
         }
 
-        // Concurrency Conflict Resolution: Pick the one with the latest LastUpdatedUtc timestamp
         var selectedResult = validResults.OrderByDescending(r => r.LastUpdatedUtc).First();
 
         _logger.LogInformation("Multiple providers responded. Selection algorithm picked {SelectedProvider} with later timestamp {Timestamp} (vs other provider updates).", 
@@ -103,7 +87,6 @@ public class FlightStatusService : IFlightStatusService
         }
         catch (Exception ex)
         {
-            // Fail-safe requirement: If one provider fails, we log it and continue
             _logger.LogError(ex, "Exception occurred while querying provider {ProviderName} for flight {FlightNumber}.", provider.ProviderName, flightNumber);
             return null;
         }
@@ -119,8 +102,8 @@ public class FlightStatusService : IFlightStatusService
             FlightNumber = flightNumber,
             Date = date,
             Status = UnifiedFlightStatus.Unknown,
-            ScheduledDeparture = DateTime.UtcNow, // Set current time as placeholder
-            ScheduledArrival = DateTime.UtcNow,   // Set current time as placeholder
+            ScheduledDeparture = DateTime.UtcNow,
+            ScheduledArrival = DateTime.UtcNow,
             Terminal = null,
             Gate = null,
             DelayReason = reason,

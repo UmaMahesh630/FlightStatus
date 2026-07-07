@@ -12,12 +12,10 @@ import { FlightStatusResult, UnifiedFlightStatus } from '../../models/flight-sta
 export class ResultComponent {
   @Input() result!: FlightStatusResult;
 
-  // Expose status enum to template
   protected readonly FlightStatus = UnifiedFlightStatus;
 
   /**
-   * Helper to determine status-specific styling classes.
-   * Defensively supports both string enums and numeric representations from JSON.
+   * Translates status representations into display styling classes.
    */
   getStatusClass(status: any): string {
     const isOnTime = status === UnifiedFlightStatus.OnTime || status === 0 || status === '0' || status === 'OnTime';

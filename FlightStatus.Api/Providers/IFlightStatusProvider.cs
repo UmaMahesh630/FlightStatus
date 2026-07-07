@@ -3,20 +3,11 @@ namespace FlightStatus.Api.Providers;
 using FlightStatus.Api.Domain.Models;
 
 /// <summary>
-/// Defines the strategy interface for retrieving flight status from external data sources.
+/// Strategy contract for external flight status suppliers.
 /// </summary>
 /// <remarks>
-/// ARCHITECTURE & DESIGN PATTERN: The Strategy Pattern
-/// - **Why Chosen**: The Strategy Pattern defines a family of algorithms (how to fetch and normalize status from 
-///   different vendors), encapsulates each one (e.g. AeroTrack vs. QuickFlight), and makes them interchangeable.
-///   This allows the orchestration service to remain decoupled from vendor-specific details.
-/// - **Open-Closed Principle (OCP)**: We can introduce a third or fourth flight provider (e.g. FlightRadar24) at 
-///   any time by creating a new class implementing `IFlightStatusProvider` and registering it in DI, without 
-///   having to modify existing orchestrator logic or endpoints.
-/// - **Dependency Injection (DI)**: In .NET 8, registering multiple implementations of an interface allows us to 
-///   inject an `IEnumerable<IFlightStatusProvider>` into the service layer, making it highly testable and configurable.
-/// - **Asynchrony**: Methods return `Task` objects to ensure non-blocking, asynchronous execution during external 
-///   I/O calls (simulating HTTP request/network waits).
+/// Encapsulates supplier-specific data retrieval and normalization. Concrete strategies 
+/// map raw vendor schemas to the unified domain models.
 /// </remarks>
 public interface IFlightStatusProvider
 {

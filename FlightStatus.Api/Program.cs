@@ -9,19 +9,11 @@ using FlightStatus.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
-// =========================================================================
-// DEPENDENCY INJECTION & CONFIGURATION REGISTRATION
-// =========================================================================
-
-// Configure JSON Options to serialize enums as strings (compatible with TypeScript string enums)
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
 });
 
-// 1. Configure CORS (Cross-Origin Resource Sharing)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AngularDevPolicy", policy =>
@@ -32,33 +24,23 @@ builder.Services.AddCors(options =>
     });
 });
 
-// 2. Global Exception Handling and Problem Details (.NET 8 standard)
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
-// Register Swagger services for interactive documentation
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// 3. Register FluentValidation Validators:
-//    DESIGN DECISION: Registers all validators (like FlightStatusRequestValidator) automatically from 
-//    the assembly, reducing registration maintenance effort as more validators are created.
+// Automatically scan assembly and register FluentValidation validator classes
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
-// 4. Providers (Strategy Pattern):
+// Register supplier strategy implementations in DI container
 builder.Services.AddScoped<IFlightStatusProvider, AeroTrackFlightStatusProvider>();
 builder.Services.AddScoped<IFlightStatusProvider, QuickFlightFlightStatusProvider>();
 
-// 5. Orchestration Service:
 builder.Services.AddScoped<IFlightStatusService, FlightStatusService>();
-
-// =========================================================================
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-
-// Apply Global Exception Handler middleware early in the pipeline to catch downstream exceptions.
 app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
@@ -72,32 +54,20 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
-// Apply CORS Policy
 app.UseCors("AngularDevPolicy");
-
-// =========================================================================
-// MINIMAL API ENDPOINTS
-// =========================================================================
 
 /// <summary>
 /// GET /flights/status
-/// Retrieves normalized flight status information for a given flight number and date.
+/// Resolves the aggregated, normalized status of a given flight.
 /// </summary>
 /// <remarks>
-/// ARCHITECTURE & DESIGN DECISIONS:
-/// - **Parameter Bundling ([AsParameters])**: Captures all incoming query arguments into a cohesive DTO.
-/// - **Cross-Cutting Validation (AOP Filter)**: Appends AddEndpointFilter for validation. The endpoint code 
-///   does not execute manual checks; instead, ValidationFilter interceptors check both Data Annotations 
-///   and FluentValidation rules before execution, conforming to the Single Responsibility Principle.
+/// Validates request parameters via <see cref="ValidationFilter{T}"/> before execution.
 /// </remarks>
 app.MapGet("/flights/status", async (
     [AsParameters] FlightStatusRequest request,
     [FromServices] IFlightStatusService flightStatusService) =>
 {
-    // Parse the date (guaranteed valid due to validation filter checks)
     var date = DateOnly.ParseExact(request.DateStr!, "yyyy-MM-dd");
-
-    // Execute Orchestration Logic
     var statusResult = await flightStatusService.ExecuteLookupAsync(request.FlightNumber!, date);
 
     return Results.Ok(statusResult);
@@ -110,7 +80,6 @@ app.MapGet("/flights/status", async (
 .Produces(StatusCodes.Status400BadRequest)
 .Produces(StatusCodes.Status500InternalServerError);
 
-// Basic health check endpoint
 app.MapGet("/health", () => Results.Ok(new { status = "Healthy" }));
 
 app.Run();

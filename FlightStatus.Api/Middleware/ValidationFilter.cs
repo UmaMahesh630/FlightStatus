@@ -5,31 +5,23 @@ using System.ComponentModel.DataAnnotations;
 namespace FlightStatus.Api.Middleware;
 
 /// <summary>
-/// A reusable, generic endpoint filter that runs both Data Annotations and FluentValidation.
+/// A generic endpoint filter executing both Data Annotations and FluentValidation.
 /// </summary>
 /// <remarks>
-/// ARCHITECTURE & DESIGN DECISIONS:
-/// - **ASP.NET Core Endpoint Filters**: Introduced in .NET 7/8, these filters enable Aspect-Oriented Programming (AOP). 
-///   By executing validation as a cross-cutting concern, we keep endpoint route handlers clean and focused only 
-///   on executing business orchestration.
-/// - **Dual Validation Engine**: Performs both standard C# Data Annotations validation (via Validator) and 
-///   FluentValidation (via DI resolved IValidator). This demonstrates how declarative metadata validation and 
-///   logical fluent validation can co-exist.
-/// - **Standardized Validation Details**: Returns a <see cref="Microsoft.AspNetCore.Http.HttpResults.ValidationProblem"/> 
-///   response which structures errors inside a standard ProblemDetails (RFC 7807) payload.
+/// Intercepts incoming parameters in the Minimal API pipeline (Aspect-Oriented validation). 
+/// Executes standard Data Annotations, followed by FluentValidation rules if an <see cref="IValidator{T}"/> 
+/// is registered in DI, returning a RFC 7807 ValidationProblem response if validation fails.
 /// </remarks>
 public class ValidationFilter<T> : IEndpointFilter where T : class
 {
     public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
     {
-        // Find the argument matching the validated type
         var argToValidate = context.Arguments.FirstOrDefault(x => x is T) as T;
         if (argToValidate == null)
         {
             return await next(context);
         }
 
-        // 1. Data Annotations Validation
         var validationContext = new ValidationContext(argToValidate);
         var validationResults = new List<ValidationResult>();
         bool isValidAnnotations = Validator.TryValidateObject(argToValidate, validationContext, validationResults, true);
@@ -46,7 +38,6 @@ public class ValidationFilter<T> : IEndpointFilter where T : class
             return Results.ValidationProblem(errors);
         }
 
-        // 2. Fluent Validation (if registered in DI)
         var fluentValidator = context.HttpContext.RequestServices.GetService<IValidator<T>>();
         if (fluentValidator != null)
         {

@@ -3,16 +3,11 @@ namespace FlightStatus.Api.Domain.Models;
 using FlightStatus.Api.Domain.Enums;
 
 /// <summary>
-/// Represents the normalized flight status domain model returned by the service layer and Minimal API.
+/// Normalized flight status domain model.
 /// </summary>
 /// <remarks>
-/// ARCHITECTURE & DESIGN DECISION: Immutability and Thread-Safety via C# Records
-/// - **Strategy**: Value Object / Data Transfer Object (DTO) pattern.
-/// - **Rationale**: FlightStatusResult is a read-only transfer model. Using a C# `record` enforces immutability 
-///   by default, preventing accidental mutations as it propagates through our services, mappers, and API responses. 
-///   It also provides built-in value-based equality and compiler-generated formatting, reducing boilerplate.
-/// - **Alternative**: Standard classes with getter/setter properties. However, standard classes allow side-effects 
-///   and mutations which can introduce bugs in multi-threaded/concurrent code (like our parallel provider query).
+/// Implemented as an immutable record to ensure thread safety during concurrent 
+/// provider queries and prevent side-effects in downstream mappers.
 /// </remarks>
 public record FlightStatusResult
 {

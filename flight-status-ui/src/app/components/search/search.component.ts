@@ -16,7 +16,6 @@ export class SearchComponent {
   private readonly fb = inject(FormBuilder);
   private readonly flightService = inject(FlightStatusService);
 
-  // Define Reactive Form with validation rules matching backend expectations
   protected readonly searchForm = this.fb.group({
     flightNumber: ['', [
       Validators.required, 
@@ -27,14 +26,10 @@ export class SearchComponent {
     ]]
   });
 
-  // UI state signals
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly result = signal<FlightStatusResult | null>(null);
 
-  /**
-   * Triggers flight search if the form passes validations
-   */
   onSubmit(): void {
     if (this.searchForm.invalid) {
       this.searchForm.markAllAsTouched();
@@ -60,9 +55,6 @@ export class SearchComponent {
     });
   }
 
-  /**
-   * Formats error payloads from the .NET backend into user-friendly messages
-   */
   private parseAndSetError(err: any): void {
     if (err.status === 0) {
       this.error.set('Could not connect to the server. Please verify the backend is running.');
@@ -71,7 +63,6 @@ export class SearchComponent {
 
     const errorPayload = err.error;
 
-    // Handle ValidationProblemDetails format
     if (errorPayload && errorPayload.errors) {
       const errorList = Object.entries(errorPayload.errors)
         .map(([field, messages]) => {
@@ -83,13 +74,11 @@ export class SearchComponent {
       return;
     }
 
-    // Handle custom API { error: "message" } format
     if (errorPayload && errorPayload.error) {
       this.error.set(errorPayload.error);
       return;
     }
 
-    // Handle ProblemDetails detail format
     if (errorPayload && errorPayload.detail) {
       this.error.set(errorPayload.detail);
       return;
