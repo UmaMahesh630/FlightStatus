@@ -393,3 +393,19 @@ Accepted
 ### Notes
 
 Installed `Microsoft.AspNetCore.Mvc.Testing` in the tests project. Configured the tests target framework to `net9.0` to prevent `UnflushedBytes` serialization crashes on local .NET 9 SDK development environments. Wrote 11 test cases inside `FlightStatusIntegrationTests.cs` using inline NSubstitute mocked service providers to simulate supplier exceptions. All 60/60 tests run and pass successfully.
+
+---
+
+# Prompt 24 – Review and Improve Test Coverage
+
+### Prompt
+
+Reviewed the existing xUnit and API integration tests. Verified test coverage against the assignment requirements, improved missing scenarios where necessary, and updated the project documentation (README.md and reflection.md) to describe the testing approach and coverage.
+
+### Result
+
+Accepted
+
+### Notes
+
+Verified both unit and integration tests (60/60 passing scenarios). Updated project documentation (README.md structure mapping and reflection.md Section 8) with testing instructions, coverage summary, and improvements made after the review.
