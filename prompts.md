@@ -291,3 +291,35 @@ Generate reflection.md describing assumptions, trade-offs, lessons learned, and 
 ### Result
 
 Accepted
+
+---
+
+# Prompt 19 – Enforce Strict Flight Number Format
+
+### Prompt
+
+Add validation for the `flightNumber` query parameter in the backend. Accept only valid flight numbers matching the pattern: 2–3 uppercase letters followed by 1–4 digits (e.g. AI101, BA202, EK508). Return HTTP 400 Bad Request with a meaningful validation message if the format is invalid.
+
+### Result
+
+Rejected
+
+### Reason
+
+The initial implementation used the `[RegularExpression]` Data Annotation directly on the request DTO. This caused Swashbuckle to append a pattern schema to the OpenAPI definition, which triggered Swagger UI to block invalid inputs with client-side field validation below the input text box, rather than returning a structured HTTP 400 response body from the backend filter.
+
+---
+
+# Prompt 20 – Refined Backend-Only Format Validation
+
+### Prompt
+
+Update the validation so that format validation is performed in the backend API filter, not through OpenAPI parameter pattern validation. Remove any OpenAPI/Swagger parameter validation attributes (like `[RegularExpression]`) that cause client-side Swagger blocks. Keep the same validation rule (`^[A-Z]{2,3}\d{1,4}$`) but enforce it strictly in the backend, returning the error in the HTTP response body as a ProblemDetails/ValidationProblemDetails payload.
+
+### Result
+
+Accepted
+
+### Notes
+
+Removed `[RegularExpression]` attributes from the request DTO and delegated formatting validations entirely to the FluentValidation pipeline inside the endpoint `ValidationFilter`. This successfully forces Swagger UI to send the request to the server, displaying the structured HTTP 400 ProblemDetails schema in the Response section as expected.
