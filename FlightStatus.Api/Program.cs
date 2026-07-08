@@ -66,6 +66,7 @@ builder.Services.AddScoped<IFlightStatusService, FlightStatusService>();
 var app = builder.Build();
 
 app.UseExceptionHandler();
+app.UseSerilogRequestLogging();
 
 if (app.Environment.IsDevelopment())
 {
