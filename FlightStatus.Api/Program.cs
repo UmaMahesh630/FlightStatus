@@ -6,8 +6,32 @@ using FlightStatus.Api.Dtos;
 using FlightStatus.Api.Middleware;
 using FlightStatus.Api.Providers;
 using FlightStatus.Api.Services;
+using Serilog;
+using Serilog.Events;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Ensure the Logs directory exists
+var logDirectory = Path.Combine(builder.Environment.ContentRootPath, "Logs");
+if (!Directory.Exists(logDirectory))
+{
+    Directory.CreateDirectory(logDirectory);
+}
+
+// Bootstrap Serilog Configuration
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+    .MinimumLevel.Override("System", LogEventLevel.Warning)
+    .Enrich.FromLogContext()
+    .WriteTo.Console(outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz}] [{Level:u3}] [{RequestId}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
+    .WriteTo.Async(a => a.File(
+        path: Path.Combine(logDirectory, "application-.log"),
+        rollingInterval: RollingInterval.Day,
+        outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz}] [{Level:u3}] [{RequestId}] [{SourceContext}] {Message:lj}{NewLine}{Exception}"))
+    .CreateLogger();
+
+builder.Host.UseSerilog();
 
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
@@ -82,6 +106,18 @@ app.MapGet("/flights/status", async (
 
 app.MapGet("/health", () => Results.Ok(new { status = "Healthy" }));
 
-app.Run();
+try
+{
+    Log.Information("Starting Flight Status API...");
+    app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Flight Status API terminated unexpectedly!");
+}
+finally
+{
+    Log.CloseAndFlush();
+}
 
 public partial class Program { }

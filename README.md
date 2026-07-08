@@ -150,6 +150,34 @@ dotnet test
 
 ---
 
-## 5. Copilot & AI Usage
+## 5. Local Development Logging
+
+The application includes production-ready, asynchronous structured logging using **Serilog**. 
+
+All console output is mirrored to daily rotating files stored locally to aid development and troubleshooting.
+
+### 5.1. Log File Location
+Log files are created automatically under the `Logs/` directory of the API project:
+* Path: `FlightStatus.Api/Logs/application-YYYYMMDD.log`
+* Example: `FlightStatus.Api/Logs/application-20260708.log`
+
+### 5.2. Log Format
+Logs are structured for easy parsing and readability. Every entry contains:
+* **Timestamp**: Time format `yyyy-MM-dd HH:mm:ss.fff zzz`
+* **Log Level**: 3-character uppercase format (`[INF]`, `[WRN]`, `[ERR]`, `[FTL]`)
+* **Request ID**: The ASP.NET Core correlation HTTP Request ID `[RequestId]` (populated automatically for web API requests)
+* **Source Context**: The namespace/class where the log originated `[Source]`
+* **Message**: The formatted log details
+* **Exception Details**: Multi-line stack traces printed directly below the message on failure
+
+### 5.3. Viewing Logs
+You can tail the logs in real-time during local runs using `tail`:
+```bash
+tail -f FlightStatus.Api/Logs/application-$(date +%Y%m%d).log
+```
+
+---
+
+## 6. Copilot & AI Usage
 
 AI assistance was utilized systematically to review architectural designs, generate boilerplate structures, and create unit test frameworks. A detailed mapping of prompts, design decisions, and log traces is kept inside [prompts.md](file:///Users/umamahesh/Desktop/FlightStatus/prompts.md).
